@@ -23,7 +23,8 @@
 ├── html/
 │   └── secure/index.html
 ├── scripts/
-│   └── entrypoint.sh
+│   ├── entrypoint.sh
+│   └── gen-sp-metadata.sh
 └── shibboleth/
     ├── shibboleth2.xml
     ├── attribute-map.xml
@@ -37,6 +38,7 @@
 - `apache/shib.conf`: SPハンドラ公開、`/secure` 認証、`userid` → `X-USER-ID` ヘッダ変換、ホストOS上Webアプリへの転送設定。
 - `html/secure/index.html`: 最小限の保護ページ。
 - `scripts/entrypoint.sh`: 証明書存在確認、Apacheの8080待受化、`shibd`/`httpd` 起動。
+- `scripts/gen-sp-metadata.sh`: `sp-cert.pem` からSPメタデータを生成し、`KeyDescriptor` を `signing/encryption` に分割。
 - `shibboleth/shibboleth2.xml`: SP本体設定（SSO/SLO、メタデータ、属性抽出/フィルタ）。
 - `shibboleth/attribute-map.xml`: SAML Attribute 名/OID と SP属性IDのマッピング。
 - `shibboleth/attribute-policy.xml`: SPで利用可能な属性の許可ポリシー。
@@ -80,6 +82,23 @@
 - 証明書は手動配置前提
 - `sp-key.pem` と `sp-cert.pem` を `/opt/shibboleth-sp/certs` に配置
 - 未配置の場合、`entrypoint.sh` は起動を中断
+
+
+### 4.5 SPメタデータ生成（新規証明書ベース）
+- `scripts/gen-sp-metadata.sh` を使用
+- `entityID` は Shibboleth で一般的な URL 形式として `https://<SP公開FQDN>/shibboleth` を採用
+- Binding は Shibboleth SP の標準生成内容（利用分のみ）を利用
+
+実行例:
+
+```bash
+SP_HOST="login.example.jp" \
+BASE_URL="https://login.example.jp" \
+ENTITY_ID="https://login.example.jp/shibboleth" \
+CERT_PEM="/opt/shibboleth-sp/certs/sp-cert.pem" \
+OUT_XML="/opt/shibboleth-sp/metadata/sp-metadata.xml" \
+./scripts/gen-sp-metadata.sh
+```
 
 ---
 

@@ -43,6 +43,10 @@ stop: ## 当該機能を停止する。
 log: ## ログを表示する。
 	cd $(SERVICE_DIR) && docker compose logs -f
 
+.PHONY: gen_sp_metadata
+gen_sp_metadata: ## SP証明書からSPメタデータを生成する。
+	cd $(SOURCE_DIR) && ./scripts/gen-sp-metadata.sh
+
 .PHONY: erase
 erase: ## 当該機能で利用するDockerイメージを削除する。
 	(cd $(SERVICE_DIR) && docker compose down --rmi all || exit 0)
