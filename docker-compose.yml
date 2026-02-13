@@ -1,0 +1,14 @@
+services:
+  shibsp:
+    build: .
+    container_name: shibsp
+    ports:
+      - "8081:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /opt/shibboleth-sp/metadata:/etc/shibboleth/metadata:ro
+      - /opt/shibboleth-sp/certs:/etc/shibboleth/certs
+      - /opt/shibboleth-sp/logs/shibboleth:/var/log/shibboleth
+      - /opt/shibboleth-sp/logs/httpd:/var/log/httpd
+    restart: always
