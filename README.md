@@ -24,6 +24,7 @@
 │   └── secure/index.html
 ├── scripts/
 │   ├── entrypoint.sh
+│   ├── gen-sp-cert.sh
 │   └── gen-sp-metadata.sh
 └── shibboleth/
     ├── shibboleth2.xml
@@ -34,10 +35,11 @@
 
 - `Dockerfile`: Amazon Linux 2023 ベースの Shibboleth SP コンテナ定義。
 - `docker-compose.yml`: `shibsp`(Apache+Shibboleth SP) の起動定義。`/opt/shibboleth-sp/{metadata,certs,logs}` をコンテナへマウントして運用。
-- `Makefile`: `make init`～`make deploy`～`make start` で `/opt/shibboleth-sp` 配下に配備/起動するタスクランナー。
+- `Makefile`: `make init`～`make deploy`～`make start` で `/opt/shibboleth-sp` 配下に配備/起動するタスクランナー。`/opt/shibboleth-sp/service` を実行系ディレクトリとして使用。
 - `apache/shib.conf`: SPハンドラ公開、`/secure` 認証、`userid` → `X-USER-ID` ヘッダ変換、ホストOS上Webアプリへの転送設定。
 - `html/secure/index.html`: 最小限の保護ページ。
 - `scripts/entrypoint.sh`: 証明書存在確認、Apacheの8080待受化、`shibd`/`httpd` 起動。
+- `scripts/gen-sp-cert.sh`: `sp-key.pem` / `sp-cert.pem` を10年有効で生成。
 - `scripts/gen-sp-metadata.sh`: `sp-cert.pem` からSPメタデータを生成し、`KeyDescriptor` を `signing/encryption` に分割。
 - `shibboleth/shibboleth2.xml`: SP本体設定（SSO/SLO、メタデータ、属性抽出/フィルタ）。
 - `shibboleth/attribute-map.xml`: SAML Attribute 名/OID と SP属性IDのマッピング。
@@ -73,15 +75,22 @@
 
 ### 4.2 IdP メタデータ
 - `shibboleth/metadata/idp-metadata.xml` を IdP の実メタデータに置換
-- `make deploy` 後、`/opt/shibboleth-sp/metadata` へ配備されるため、必要に応じて同ディレクトリを直接更新
+- `make deploy` 後、`/opt/shibboleth-sp/metadata` を参照するため、必要に応じて同ディレクトリを直接更新
 
 ### 4.3 userid 属性の OID/Name
 - `shibboleth/attribute-map.xml` の `id="userid"` の Attribute `name` を実値に置換
 
 ### 4.4 SP 証明書
-- 証明書は手動配置前提
-- `sp-key.pem` と `sp-cert.pem` を `/opt/shibboleth-sp/certs` に配置
+- `scripts/gen-sp-cert.sh` で10年有効の証明書を生成可能
+- 生成先はデフォルトで `/opt/shibboleth-sp/certs`
+- 既存証明書がある場合は上書き防止のためエラー終了
 - 未配置の場合、`entrypoint.sh` は起動を中断
+
+証明書生成例:
+
+```bash
+SP_HOST="login.example.jp" OUT_DIR="/opt/shibboleth-sp/certs" ./scripts/gen-sp-cert.sh
+```
 
 
 ### 4.5 SPメタデータ生成（新規証明書ベース）
@@ -106,6 +115,10 @@ OUT_XML="/opt/shibboleth-sp/metadata/sp-metadata.xml" \
 
 `make` コマンドで `/opt/shibboleth-sp` 配下へ配置して運用します。
 
+補足:
+- `INSTALL_DIR` と `DEPLOY_DIR` を分ける理由は、`/opt/shibboleth-sp` 直下に `metadata/certs/logs` を固定配置しつつ、アプリ資材のみを `/opt/shibboleth-sp/service` に同期するためです。
+- これにより `deploy` の rsync `--delete` 実行時に、運用データ（証明書・メタデータ・ログ）を誤削除しません。
+
 ```bash
 make init
 make deploy
@@ -114,12 +127,14 @@ make start
 
 主なタスク:
 
-- `make init`: `/opt/shibboleth-sp`、`/opt/shibboleth-sp/app`、`/opt/shibboleth-sp/{metadata,certs}`、`/opt/shibboleth-sp/logs/{shibboleth,httpd}` を作成
-- `make deploy`: リポジトリ内容を `/opt/shibboleth-sp/app` に同期し、`make build` を実行
+- `make init`: `/opt/shibboleth-sp`、`/opt/shibboleth-sp/service`、`/opt/shibboleth-sp/{metadata,certs}`、`/opt/shibboleth-sp/logs/{shibboleth,httpd}` を作成
+- `make deploy`: リポジトリ内容を `/opt/shibboleth-sp/service` に同期し、`make build` を実行
 - `make build`: Docker イメージをビルド
 - `make start`: コンテナ起動
 - `make stop`: コンテナ停止
 - `make log`: ログ表示
+- `make gen_sp_cert`: `sp-key.pem` / `sp-cert.pem` を生成（10年）
+- `make gen_sp_metadata`: SPメタデータを生成
 - `make erase`: コンテナ/イメージ削除
 - `make CLEAN`: `/opt/shibboleth-sp` を削除（危険）
 
