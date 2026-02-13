@@ -1,0 +1,4 @@
+<!-- Replace this file with your actual IdP metadata XML. -->
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  entityID="https://idp.example.com/idp/shibboleth">
+</EntityDescriptor>

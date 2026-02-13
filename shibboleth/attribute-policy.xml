@@ -1,0 +1,24 @@
+<AttributeFilterPolicyGroup xmlns="urn:mace:shibboleth:2.0:afp"
+                            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <AttributeFilterPolicy id="releaseAll">
+        <PolicyRequirementRule xsi:type="ANY"/>
+
+        <AttributeRule attributeID="mail">
+            <PermitValueRule xsi:type="ANY"/>
+        </AttributeRule>
+        <AttributeRule attributeID="givenName">
+            <PermitValueRule xsi:type="ANY"/>
+        </AttributeRule>
+        <AttributeRule attributeID="sn">
+            <PermitValueRule xsi:type="ANY"/>
+        </AttributeRule>
+        <AttributeRule attributeID="eppn">
+            <PermitValueRule xsi:type="ANY"/>
+        </AttributeRule>
+        <AttributeRule attributeID="userid">
+            <PermitValueRule xsi:type="ANY"/>
+        </AttributeRule>
+    </AttributeFilterPolicy>
+
+</AttributeFilterPolicyGroup>
